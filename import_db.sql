@@ -82,4 +82,4 @@ INSERT INTO
 VALUES
   (1, 6, NULL, 'With your fists'),
   (1, 5, 1, 'And plenty of juice'),
-  (4, 2, NULL, 'Something you take from an Apple');
+  (2, 4, NULL, 'Something you take from an Apple');

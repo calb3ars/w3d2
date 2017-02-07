@@ -1,4 +1,4 @@
-require_relative 'questionsdb'
+Dir['./*.rb'].each { |file| require file }
 
 class User
   attr_accessor :fname, :lname
@@ -24,6 +24,18 @@ class User
         id = ?
     SQL
     self.new(data.first)
+  end
+
+  def self.find_by_name(fname, lname)
+    users = QuestionsDB.instance.execute(<<-SQL, fname, lname)
+      SELECT
+        *
+      FROM
+        users
+      WHERE
+        fname LIKE ? AND lname LIKE ?
+    SQL
+    users.map { |user| self.new(user) }
   end
 
   def initialize(options)
@@ -54,6 +66,14 @@ class User
         id = ?
     SQL
     nil
+  end
+
+  def authored_questions
+    Question.find_by_author_id(@id)
+  end
+
+  def authored_replies
+    Reply.find_by_user_id(@id)
   end
 
   def to_s

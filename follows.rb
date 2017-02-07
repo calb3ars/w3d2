@@ -1,6 +1,5 @@
-require_relative 'questionsdb'
-require_relative 'users'
-require_relative 'questions'
+Dir['./*.rb'].each { |file| require file }
+
 require 'colorize'
 
 class Follow

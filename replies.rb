@@ -1,6 +1,5 @@
-require_relative 'questionsdb'
-require_relative 'users'
-require_relative 'questions'
+Dir['./*.rb'].each { |file| require file }
+
 require 'colorize'
 
 
@@ -28,6 +27,30 @@ class Reply
         id = ?
     SQL
     self.new(data.first)
+  end
+
+  def self.find_by_user_id(user_id)
+    replies = QuestionsDB.instance.execute(<<-SQL, user_id)
+      SELECT
+        *
+      FROM
+        replies
+      WHERE
+        user_id = ?
+    SQL
+    replies.map { |reply| self.new(reply) }
+  end
+
+  def self.find_by_question_id(question_id)
+    replies = QuestionsDB.instance.execute(<<-SQL, question_id)
+      SELECT
+        *
+      FROM
+        replies
+      WHERE
+        question_id = ?
+    SQL
+    replies.map { |reply| self.new(reply) }
   end
 
   def initialize(options)
@@ -60,6 +83,31 @@ class Reply
         id = ?
     SQL
     nil
+  end
+
+  def author
+    User.find_by_id(@user_id)
+  end
+
+  def question
+    Question.find_by_id(@question_id)
+  end
+
+  def parent_reply
+    return nil unless @parent_id
+    Reply.find_by_id(@parent_id)
+  end
+
+  def child_replies
+    replies = QuestionsDB.instance.execute(<<-SQL, @id)
+      SELECT
+        *
+      FROM
+        replies
+      WHERE
+        parent_id = ?
+    SQL
+    replies.map { |reply| Reply.new(reply)}
   end
 
   def to_s

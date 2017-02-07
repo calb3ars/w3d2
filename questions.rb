@@ -1,5 +1,5 @@
-require_relative 'questionsdb'
-require_relative 'users'
+Dir['./*.rb'].each { |file| require file }
+
 require 'colorize'
 
 
@@ -27,6 +27,18 @@ class Question
         id = ?
     SQL
     self.new(data.first)
+  end
+
+  def self.find_by_author_id(author_id)
+    questions = QuestionsDB.instance.execute(<<-SQL, author_id)
+      SELECT
+        *
+      FROM
+        questions
+      WHERE
+        author_id = ?
+    SQL
+    questions.map{ |question| self.new(question) }
   end
 
   def initialize(options)
@@ -58,6 +70,14 @@ class Question
         id = ?
     SQL
     nil
+  end
+
+  def author
+    User.find_by_id(@author_id)
+  end
+
+  def replies
+    Reply.find_by_question_id(@id)
   end
 
   def to_s
