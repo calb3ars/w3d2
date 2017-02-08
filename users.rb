@@ -44,6 +44,64 @@ class User
     @lname = options['lname']
   end
 
+  def authored_questions
+    Question.find_by_author_id(@id)
+  end
+
+  def authored_replies
+    Reply.find_by_user_id(@id)
+  end
+
+  def followed_questions
+    Follow.followed_questions_for_user_id(@id)
+  end
+
+  def liked_questions
+    Like.liked_questions_for_user_id(@id)
+  end
+
+  def average_karma
+    result = QuestionsDB.instance.execute(<<-SQL, @id)
+      SELECT
+        (num_likes.total_likes / CAST(num_questions.total_questions AS FLOAT)) AS avg_likes
+      FROM (
+        SELECT
+          author_id,
+          COUNT(*) AS total_likes
+        FROM
+          questions
+        LEFT OUTER JOIN
+          likes ON questions.id = likes.question_id
+        WHERE
+          likes.id IS NOT NULL
+        GROUP BY
+          author_id) AS num_likes
+      JOIN (
+        SELECT
+          author_id,
+          COUNT(*) AS total_questions
+        FROM
+          questions
+        GROUP BY
+          author_id) AS num_questions
+      ON num_likes.author_id = num_questions.author_id
+      WHERE
+        num_likes.author_id = ?
+    SQL
+
+    result.first['avg_likes']
+  end
+
+  def to_s
+    "#{@fname} #{@lname}"
+  end
+
+  def save
+    @id ? update : create
+  end
+
+  private
+
   def create
     raise "#{to_s} already exists in database" if @id
     QuestionsDB.instance.execute(<<-SQL, @fname, @lname)
@@ -66,17 +124,5 @@ class User
         id = ?
     SQL
     nil
-  end
-
-  def authored_questions
-    Question.find_by_author_id(@id)
-  end
-
-  def authored_replies
-    Reply.find_by_user_id(@id)
-  end
-
-  def to_s
-    "#{@fname} #{@lname}"
   end
 end

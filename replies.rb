@@ -61,30 +61,6 @@ class Reply
     @body = options['body']
   end
 
-  def create
-    raise "This reply already exists" if @id
-    QuestionsDB.instance.execute(<<-SQL, @question_id, @user_id, @parent_id, @body)
-      INSERT INTO
-        replies (question_id, user_id, parent_id, body)
-      VALUES
-        (?, ?, ?, ?)
-    SQL
-    @id = QuestionsDB.instance.last_insert_row_id
-  end
-
-  def update
-    raise "This reply doesn't exist yet" unless @id
-    QuestionsDB.instance.execute(<<-SQL, @question_id, @user_id, @parent_id, @body, @id)
-      UPDATE
-        replies
-      SET
-        question_id = ?, user_id = ?, parent_id = ?, body = ?
-      WHERE
-        id = ?
-    SQL
-    nil
-  end
-
   def author
     User.find_by_id(@user_id)
   end
@@ -113,5 +89,35 @@ class Reply
   def to_s
     "#{User.find_by_id(@user_id).fname.blue} replied to #{Question.find_by_id(@question_id).title.red}\n
     #{@body}"
+  end
+
+  def save
+    @id ? update : create
+  end
+
+  private
+
+  def create
+    raise "This reply already exists" if @id
+    QuestionsDB.instance.execute(<<-SQL, @question_id, @user_id, @parent_id, @body)
+      INSERT INTO
+        replies (question_id, user_id, parent_id, body)
+      VALUES
+        (?, ?, ?, ?)
+    SQL
+    @id = QuestionsDB.instance.last_insert_row_id
+  end
+
+  def update
+    raise "This reply doesn't exist yet" unless @id
+    QuestionsDB.instance.execute(<<-SQL, @question_id, @user_id, @parent_id, @body, @id)
+      UPDATE
+        replies
+      SET
+        question_id = ?, user_id = ?, parent_id = ?, body = ?
+      WHERE
+        id = ?
+    SQL
+    nil
   end
 end
